@@ -35,52 +35,55 @@ async def getData(urls):
 
 def binFlip(allAuctions, budget):
 
-	items = {} # {RawName: [currentName, rarity, category, firstPrice, secondPrice, coinDifference}
+	items = {} # {RawName: [currentName, rarity, category, firstPrice, secondPrice, coinDifference]}
 	for page in allAuctions:
 		auctions = page["auctions"]
 		for x in auctions:
 			try:
 				if x["bin"]:
-					itemName = getRawName(x["item_bytes"])
-					if (x["item_name"] != "null" and x["category"] != "misc" and x["category"] != "blocks" and x["starting_bid"] < budget):
-						if itemName in items:
+					if (x["item_name"] != "null" and x["tier"] != "COMMON"):
+						itemName = getRawName(x["item_bytes"])
+						if (itemName in items):
 							itemData = items[itemName]
-							if itemData[4] == " ":
-								if x["starting_bid"] <= int(itemData[3]):
-									itemData[0] = x["item_name"]
-									itemData[1] = x["tier"]
-									itemData[4] = itemData[3]
-									itemData[3] = str(x["starting_bid"])
-									items[itemName] = itemData
-								else: 
-									itemData[4] = str(x["starting_bid"])
-									items[itemName] = itemData
-							else:
-								if (x["starting_bid"] <= int(itemData[3])):
-									itemData[4] = itemData[3]
-									itemData[3] = str(x["starting_bid"])
-									itemData[0] = x["item_name"]
-									itemData[1] = x["tier"]
-									items[itemName] = itemData
-								else: 
-									if (x["starting_bid"] > int(itemData[3]) and x["starting_bid"] < int(itemData[4])):
-										itemData[4] = x["starting_bid"]
+							if (x["tier"] == itemData[1]):
+								if itemData[4] == " ":
+									if x["starting_bid"] <= int(itemData[3]):
+										itemData[0] = x["item_name"]
+										itemData[4] = itemData[3]
+										itemData[3] = str(x["starting_bid"])
 										items[itemName] = itemData
+									else: 
+										itemData[4] = str(x["starting_bid"])
+										items[itemName] = itemData
+								else:
+									if (x["starting_bid"] <= int(itemData[3])):
+										itemData[4] = itemData[3]
+										itemData[3] = str(x["starting_bid"])
+										itemData[0] = x["item_name"]
+										itemData[1] = x["tier"]
+										items[itemName] = itemData
+									else: 
+										if (x["starting_bid"] > int(itemData[3]) and x["starting_bid"] < int(itemData[4])):
+											itemData[4] = str(x["starting_bid"])
+											items[itemName] = itemData
 						else:
 							items[itemName] = [x["item_name"], x["tier"], x["category"], str(x["starting_bid"]), " "," "]
 			except KeyError:
 				pass
-	#Calculations and remove not wanted stuffs
+	#Calculations and budget
 	finalItems = {}
 	for key in items.keys():
 		try:
 			dataList = items[key]
 			dataList[5] = str(int(dataList[4]) - int(dataList[3]))
-			finalItems[key] = dataList
+			if (budget > int(dataList[3])):
+				finalItems[key] = dataList
 		except:
 			pass
+	finalList = []
 	for key, value in sorted(finalItems.items(), key=lambda e: int(e[1][5]), reverse = True):
-		print (key, value)
+		finalList.append(value)
+	return finalList
 						
 ##### NBT Data #####
 def getRawName(raw):
@@ -88,16 +91,14 @@ def getRawName(raw):
    return str(data['i'].tags[0]['tag']['ExtraAttributes']['id'])
 ##### NBT Data #####
 
-def main():
-	print("Downloading data...", end = '')
+def dataMain(itemNum, budget):
+	print("Downloading data...")
 	urls = getUrls()
-	start = time.time()
 	data = asyncio.run(getData(urls))
-	print("Done!\nParsing data...", end = '')
-	#Testing
-	binFlip(data, 3000000)
+	print("Parsing data...")
+	allBinData = binFlip(data, budget)
+	binList = []
+	for i in range(0, itemNum):
+		binList.append(allBinData[i])
 	print("Done!")
-	#Testing End
-	end = time.time()
-
-main()
+	return binList
