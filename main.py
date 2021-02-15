@@ -5,7 +5,7 @@ import sys
 
 nest_asyncio.apply()
 
-TOKEN = 'ODA5NDg4OTMyODMxNzU2MzEw.YCV1UQ.S15uTMohLBkvn8r4NrUeGUCBO54'
+TOKEN = 'YOUR BOT TOKEN'
 
 client = discord.Client()
 
